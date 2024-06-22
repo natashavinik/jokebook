@@ -1,5 +1,7 @@
 # Getting Started with Create React App
 
+////NEXT STEPS: MAKING EACH JOKE IT'S OWN CARD/PAGE
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
