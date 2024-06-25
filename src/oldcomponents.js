@@ -29,6 +29,8 @@ export function JokeForm() {
 
     const data = await response.json();
     console.log("data returned:", data);
+    setTitle("");
+    setText("");
   };
 
   return (
