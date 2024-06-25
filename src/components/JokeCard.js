@@ -3,12 +3,19 @@ import React, { useState } from "react";
 const JokeCard = ({ joke: initialJoke }) => {
   const [joke, setJoke] = useState(initialJoke);
   const [isEditing, setIsEditing] = useState(false);
+  const [showText, setShowText] = useState(false);
 
-  const handleEdit = () => {
+  const handleEdit = (e) => {
+    e.stopPropagation();
     setIsEditing(true);
   };
 
-  const handleSave = async () => {
+  const handleTitleClick = () => {
+    setShowText(!showText);
+  };
+
+  const handleSave = async (e) => {
+    e.stopPropagation();
     const url = "http://localhost:8000/graphql/"; // Your GraphQL endpoint
     const mutation = `
       mutation UpdateJoke($id: ID!, $text: String!) {
@@ -53,21 +60,41 @@ const JokeCard = ({ joke: initialJoke }) => {
     }
   };
 
+  const handleCardClick = () => {
+    if (showText) {
+      setShowText(false);
+    }
+  };
+  const handleTextChange = (e) => {
+    e.stopPropagation();
+    setJoke({ ...joke, text: e.target.value });
+  };
+
+  const handleTextareaClick = (e) => {
+    e.stopPropagation(); // Prevent click event from propagating up to the div
+  };
+
   return (
-    <div>
-      <p>Title: {joke.title}</p>
-      {isEditing ? (
-        <textarea
-          value={joke.text}
-          onChange={(e) => setJoke({ ...joke, text: e.target.value })}
-        />
-      ) : (
-        <p>Text: {joke.text}</p>
-      )}
-      {isEditing ? (
-        <button onClick={handleSave}>Save</button>
-      ) : (
-        <button onClick={handleEdit}>Edit</button>
+    <div onClick={handleCardClick}>
+      {!showText && <h2 onClick={handleTitleClick}>{joke.title}</h2>}
+      {showText && (
+        <>
+          <p>Title: {joke.title}</p>
+          {isEditing ? (
+            <textarea
+              value={joke.text}
+              onChange={handleTextChange}
+              onClick={handleTextareaClick}
+            />
+          ) : (
+            <p>Text: {joke.text}</p>
+          )}
+          {isEditing ? (
+            <button onClick={handleSave}>Save</button>
+          ) : (
+            <button onClick={handleEdit}>Edit</button>
+          )}
+        </>
       )}
     </div>
   );
