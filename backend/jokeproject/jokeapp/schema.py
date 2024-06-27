@@ -44,26 +44,30 @@ class UpdateJokeMutation(graphene.Mutation):
         topics_to_remove = graphene.List(graphene.ID)
 
     def mutate(self, info, id, text, new_topics, existing_topic_ids, topics_to_add, topics_to_remove):
-        joke = Joke.objects.get(id=id)
-        joke.text = text
-        joke.save()
+        try:
+            joke = Joke.objects.get(id=id)
+            joke.text = text
+            joke.save()
 
-        # Add existing and other topics
-        for topic_id in existing_topic_ids + topics_to_add:
-            topic = Topic.objects.get(id=topic_id)
-            joke.topics.add(topic)
+            # Add existing and other topics
+            for topic_id in existing_topic_ids + topics_to_add:
+                topic = Topic.objects.get(id=topic_id)
+                joke.topics.add(topic)
 
-         # Remove topics
-        for topic_id in topics_to_remove:
-            topic = Topic.objects.get(id=topic_id)
-            joke.topics.remove(topic)
-        
-        #Add new topics
-        for topic_name in new_topics:
-            topic, created = Topic.objects.get_or_create(name=topic_name)
-            joke.topics.add(topic)
+            # Remove topics
+            for topic_id in topics_to_remove:
+                topic = Topic.objects.get(id=topic_id)
+                joke.topics.remove(topic)
+            
+            #Add new topics
+            for topic_name in new_topics:
+                topic, created = Topic.objects.get_or_create(name=topic_name)
+                joke.topics.add(topic)
 
-        return UpdateJokeMutation(joke=joke)
+            return UpdateJokeMutation(joke=joke)
+        except Exception as e:
+            print(f"A bad error occurred: {e}")
+            raise e
     
 class Query(graphene.ObjectType):
     all_jokes = graphene.List(JokeType)
