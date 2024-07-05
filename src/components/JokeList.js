@@ -4,6 +4,7 @@ import JokeCard from "./JokeCard";
 function JokeList() {
   const [jokes, setJokes] = useState([]);
   const [allTopics, setAllTopics] = useState([]);
+  const [isJokesVisible, setIsJokesVisible] = useState(false);
 
   const fetchJokes = async () => {
     const query = `
@@ -12,6 +13,7 @@ function JokeList() {
           id
           title
           text
+          length
           topics {
             id
             name
@@ -99,18 +101,27 @@ function JokeList() {
 
   return (
     <div>
-      <button onClick={fetchJokes}>Fetch Jokes</button>
-      <ul>
-        {jokes.map((joke) => (
-          <JokeCard
-            key={joke.id}
-            joke={joke}
-            topics={joke.topics}
-            allTopics={allTopics}
-            onNewTopic={handleNewTopic}
-          />
-        ))}
-      </ul>
+      <button
+        onClick={() => {
+          fetchJokes();
+          setIsJokesVisible((prevIsJokesVisible) => !prevIsJokesVisible);
+        }}
+      >
+        Fetch Jokes
+      </button>
+      {isJokesVisible && (
+        <ul>
+          {jokes.map((joke) => (
+            <JokeCard
+              key={joke.id}
+              joke={joke}
+              topics={joke.topics}
+              allTopics={allTopics}
+              onNewTopic={handleNewTopic}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

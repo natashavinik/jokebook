@@ -11,13 +11,10 @@ import JokeList from "./components/JokeList";
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <JokeForm />
-        <JokeList />
-        {/* <NewJoke /> */}
-        {/* <ShowJokes /> */}
-      </header>
+      <JokeForm />
+      <JokeList />
+      {/* <NewJoke /> */}
+      {/* <ShowJokes /> */}
     </div>
   );
 }

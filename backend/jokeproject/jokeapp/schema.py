@@ -10,7 +10,7 @@ class TopicType(DjangoObjectType):
 class JokeType(DjangoObjectType):
     class Meta:
         model = Joke
-        fields = ("id", "title", "text", "topics")
+        fields = ("id", "title", "text", "topics", "length")
         
 class CreateJokeMutation(graphene.Mutation):
     joke = graphene.Field(JokeType)
@@ -18,11 +18,12 @@ class CreateJokeMutation(graphene.Mutation):
     class Arguments:
         title = graphene.String(required=True)
         text = graphene.String(required=True)
+        length = graphene.Int()
         new_topics = graphene.List(graphene.String)
         existing_topic_ids = graphene.List(graphene.ID)
 
-    def mutate(self, info, title, text, new_topics, existing_topic_ids):
-        joke = Joke.objects.create(title=title, text=text)
+    def mutate(self, info, title, text, length, new_topics, existing_topic_ids):
+        joke = Joke.objects.create(title=title, text=text, length=length)
         for topic_id in existing_topic_ids:
             topic = Topic.objects.get(id=topic_id)
             joke.topics.add(topic)
@@ -38,15 +39,17 @@ class UpdateJokeMutation(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         text = graphene.String(required=True)
+        length = graphene.Int()
         new_topics = graphene.List(graphene.String)
         existing_topic_ids = graphene.List(graphene.ID)
         topics_to_add = graphene.List(graphene.ID)
         topics_to_remove = graphene.List(graphene.ID)
 
-    def mutate(self, info, id, text, new_topics, existing_topic_ids, topics_to_add, topics_to_remove):
+    def mutate(self, info, id, text, length, new_topics, existing_topic_ids, topics_to_add, topics_to_remove):
         try:
             joke = Joke.objects.get(id=id)
             joke.text = text
+            joke.length = length
             joke.save()
 
             # Add existing and other topics

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 const JokeCard = ({ joke: initialJoke, allTopics, onNewTopic }) => {
   const [joke, setJoke] = useState(initialJoke);
@@ -6,19 +6,28 @@ const JokeCard = ({ joke: initialJoke, allTopics, onNewTopic }) => {
   const [selectedTopics, setSelectedTopics] = useState(initialJoke.topics);
   const [newTopic, setNewTopic] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [length, setLength] = useState(initialJoke.length || 0);
 
-  const handleEdit = () => {
+  const minutes = Math.floor(length / 60);
+  const seconds = length % 60;
+
+  useEffect(() => {
+    setLength(joke.length || 0);
+  }, [joke.length]);
+
+  const handleEdit = useCallback(() => {
     setIsEditing(true);
-  };
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const url = "http://localhost:8000/graphql/"; // Your GraphQL endpoint
     const mutation = `
-      mutation UpdateJoke($id: ID!, $text: String!, $newTopics: [String!], $existingTopicIds: [ID!], $topicsToAdd: [ID!], $topicsToRemove: [ID!]) {
-        updateJoke(id: $id, text: $text, newTopics: $newTopics, existingTopicIds: $existingTopicIds, topicsToAdd: $topicsToAdd, topicsToRemove: $topicsToRemove) {
+      mutation UpdateJoke($id: ID!, $text: String!, $length: Int, $newTopics: [String!], $existingTopicIds: [ID!], $topicsToAdd: [ID!], $topicsToRemove: [ID!]) {
+        updateJoke(id: $id, text: $text, length: $length, newTopics: $newTopics, existingTopicIds: $existingTopicIds, topicsToAdd: $topicsToAdd, topicsToRemove: $topicsToRemove) {
           joke {
             id
             text
+            length
             title
             topics {
               id
@@ -55,6 +64,7 @@ const JokeCard = ({ joke: initialJoke, allTopics, onNewTopic }) => {
         variables: {
           id: joke.id,
           text: joke.text,
+          length: Math.round(Number(minutes) * 60 + Number(seconds)),
           newTopics: newTopics,
           existingTopicIds: existingTopicIds,
           topicsToAdd: topicsToAdd,
@@ -83,23 +93,38 @@ const JokeCard = ({ joke: initialJoke, allTopics, onNewTopic }) => {
     } else {
       console.error("Error updating joke:", await response.text());
     }
-  };
+  }, [joke, minutes, seconds, selectedTopics, newTopic]);
 
-  const handleTextChange = (e) => {
-    setJoke({ ...joke, text: e.target.value });
-  };
+  const handleTextChange = useCallback(
+    (e) => {
+      setJoke({ ...joke, text: e.target.value });
+    },
+    [joke]
+  );
 
-  const handleNewTopicChange = (e) => {
+  const handleNewTopicChange = useCallback((e) => {
     setNewTopic(e.target.value);
-  };
+  }, []);
 
-  const handleTopicClick = (topic) => {
+  const handleTopicClick = useCallback((topic) => {
     setSelectedTopics((prevTopics) =>
       prevTopics.some((t) => t.id === topic.id)
         ? prevTopics.filter((t) => t.id !== topic.id)
         : [...prevTopics, topic]
     );
-  };
+  }, []);
+
+  const handleLengthChange = useCallback(
+    (e, type) => {
+      const value = Number(e.target.value);
+      if (type === "minutes") {
+        setLength(value * 60 + seconds);
+      } else {
+        setLength(minutes * 60 + value);
+      }
+    },
+    [minutes, seconds]
+  );
   const handleCardClick = (e) => {
     // Prevent the event from bubbling up to the parent elements
     e.stopPropagation();
@@ -147,6 +172,28 @@ const JokeCard = ({ joke: initialJoke, allTopics, onNewTopic }) => {
                   onChange={handleNewTopicChange}
                   onClick={(e) => e.stopPropagation()}
                   placeholder="New topic"
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  value={minutes}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleLengthChange(e, "minutes");
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  placeholder="Minutes"
+                />
+                <input
+                  type="number"
+                  value={seconds}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleLengthChange(e, "seconds");
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  placeholder="Seconds"
                 />
               </div>
               <button

@@ -6,6 +6,7 @@ function JokeForm() {
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [newTopic, setNewTopic] = useState("");
   const [topics, setTopics] = useState([]);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -108,59 +109,73 @@ function JokeForm() {
 
   return (
     <div>
-      <div>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Joke title"
-        />
-      </div>
-      <div>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Joke text"
-        />
-      </div>
+      <button
+        onClick={() =>
+          setIsFormVisible((prevIsFormVisible) => !prevIsFormVisible)
+        }
+      >
+        New Joke
+      </button>
+      {isFormVisible && (
+        <>
+          <div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Joke title"
+            />
+          </div>
+          <div>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Joke text"
+            />
+          </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap" }}>
-        {topics.map((topic) => (
-          <button
-            key={topic.id}
-            style={{
-              margin: "5px",
-              backgroundColor: selectedTopics.includes(topic.id)
-                ? "lightblue"
-                : "white",
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              if (selectedTopics.includes(topic.id)) {
-                setSelectedTopics((prevTopics) =>
-                  prevTopics.filter((topicId) => topicId !== topic.id)
-                );
-              } else {
-                setSelectedTopics((prevTopics) => [...prevTopics, topic.id]);
-              }
-            }}
-          >
-            {topic.name}
-          </button>
-        ))}
-      </div>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {topics.map((topic) => (
+              <button
+                key={topic.id}
+                style={{
+                  margin: "5px",
+                  backgroundColor: selectedTopics.includes(topic.id)
+                    ? "lightblue"
+                    : "white",
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (selectedTopics.includes(topic.id)) {
+                    setSelectedTopics((prevTopics) =>
+                      prevTopics.filter((topicId) => topicId !== topic.id)
+                    );
+                  } else {
+                    setSelectedTopics((prevTopics) => [
+                      ...prevTopics,
+                      topic.id,
+                    ]);
+                  }
+                }}
+              >
+                {topic.name}
+              </button>
+            ))}
+          </div>
 
-      <div>
-        <input
-          type="text"
-          value={newTopic}
-          onChange={(e) => setNewTopic(e.target.value)}
-          placeholder="New topic"
-        />
-      </div>
-      <div>
-        <button onClick={submitJoke}>Submit Joke</button>
-      </div>
+          <div>
+            <input
+              type="text"
+              value={newTopic}
+              onChange={(e) => setNewTopic(e.target.value)}
+              placeholder="New topic"
+            />
+          </div>
+          <div>
+            <button onClick={submitJoke}>Submit Joke</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
