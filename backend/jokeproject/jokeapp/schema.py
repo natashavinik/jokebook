@@ -22,8 +22,8 @@ class CreateJokeMutation(graphene.Mutation):
         new_topics = graphene.List(graphene.String)
         existing_topic_ids = graphene.List(graphene.ID)
 
-    def mutate(self, info, title, text, length, new_topics, existing_topic_ids):
-        joke = Joke.objects.create(title=title, text=text, length=length)
+    def mutate(self, info, title, text, new_topics, existing_topic_ids, length=None):
+        joke = Joke.objects.create(title=title, text=text, length=length if length is not None else 0)
         for topic_id in existing_topic_ids:
             topic = Topic.objects.get(id=topic_id)
             joke.topics.add(topic)

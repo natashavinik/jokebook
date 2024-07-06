@@ -1,110 +1,83 @@
 import React, { useState, useEffect } from "react";
+import useInput from "../hooks/useInput";
+import useArray from "../hooks/useArray";
+import useFetch from "../hooks/useFetch";
 
 function JokeForm() {
-  const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
-  const [selectedTopics, setSelectedTopics] = useState([]);
-  const [newTopic, setNewTopic] = useState("");
-  const [topics, setTopics] = useState([]);
+  const {
+    value: title,
+    handleChange: handleTitleChange,
+    reset: resetTitle,
+  } = useInput();
+  const {
+    value: text,
+    handleChange: handleTextChange,
+    reset: resetText,
+  } = useInput();
+  const selectedTopics = useArray([]);
+  const {
+    value: newTopic,
+    handleChange: handleNewTopic,
+    reset: resetNewTopic,
+  } = useInput("");
   const [isFormVisible, setIsFormVisible] = useState(false);
-
-  useEffect(() => {
-    const fetchTopics = async () => {
-      const query = `
-      query {
-        allTopics {
-          id
-          name
-        }
-      }
-      `;
-
-      const response = await fetch("http://localhost:8000/graphql/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          query,
-          variables: {
-            title,
-            text,
-            existingTopicIds: selectedTopics,
-            newTopics: newTopic ? [newTopic] : [], // Only add newTopic to newTopics array if it's not an empty string
-          },
-        }),
-      });
-
-      const data = await response.json();
-      if (data.data && data.data.allTopics) {
-        setTopics(data.data.allTopics);
-      } else {
-        console.error("Unexpected response", data);
-      }
-    };
-    fetchTopics();
-  }, []);
+  const fetchTopicsQuery = `
+query {
+  allTopics {
+    id
+    name
+  }
+}
+`;
+  const {
+    data: topicsData,
+    error: topicsError,
+    loading: topicsLoading,
+    refetch: refetchTopics,
+  } = useFetch("http://localhost:8000/graphql/", fetchTopicsQuery);
 
   const submitJoke = async () => {
-    const query = `
-        mutation CreateJoke($title: String!, $text: String!, $existingTopicIds: [ID!], $newTopics: [String!]) {
-          createJoke(title: $title, text: $text, existingTopicIds: $existingTopicIds, newTopics: $newTopics) {
-            joke {
-              id
-              title
-              text
-              topics {
-                id
-                name
-              }
-            }
+    const createJokeQuery = `
+    mutation CreateJoke($title: String!, $text: String!, $existingTopicIds: [ID!], $newTopics: [String!]) {
+      createJoke(title: $title, text: $text, existingTopicIds: $existingTopicIds, newTopics: $newTopics) {
+        joke {
+          id
+          title
+          text
+          topics {
+            id
+            name
           }
         }
-        `;
+      }
+    }
+    `;
+
+    const variables = {
+      title,
+      text,
+      existingTopicIds: selectedTopics.array,
+      newTopics: newTopic ? [newTopic] : [],
+    };
 
     const response = await fetch("http://localhost:8000/graphql/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          title,
-          text,
-          existingTopicIds: selectedTopics,
-          newTopics: newTopic ? [newTopic] : [],
-        },
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: createJokeQuery, variables }),
     });
-    console.log(response);
 
-    const data = await response.json();
-    console.log("data returned:", data);
-    if (data.data && data.data.createJoke && newTopic) {
-      const newTopicInResponse = data.data.createJoke.joke.topics.find(
-        (topic) => topic.name === newTopic
-      );
+    const jokeData = await response.json();
 
-      if (newTopicInResponse) {
-        setTopics((prevTopics) => {
-          // Check if the new topic exists in the prevTopics array
-          if (!prevTopics.find((topic) => topic.id === newTopicInResponse.id)) {
-            // If it doesn't exist, add it to the array
-            return [...prevTopics, newTopicInResponse];
-          } else {
-            // If it exists, return the prevTopics array as is
-            return prevTopics;
-          }
-        });
-      }
+    console.log("data returned:", jokeData);
+    if (jokeData.data && jokeData.data.createJoke) {
+      // Refetch the allTopics query after a new joke is created
+      await refetchTopics();
     }
-    setTitle("");
-    setText("");
-    setSelectedTopics([]);
-    setNewTopic("");
+
+    resetTitle();
+    resetText();
+    selectedTopics.clear([]);
+    resetNewTopic();
   };
 
   return (
@@ -122,39 +95,34 @@ function JokeForm() {
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Joke title"
+              onChange={handleTitleChange}
+              placeholder="Title"
             />
           </div>
           <div>
             <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Joke text"
+              onChange={handleTextChange}
+              placeholder="Joke Text"
             />
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap" }}>
-            {topics.map((topic) => (
+            {topicsData?.allTopics.map((topic) => (
               <button
                 key={topic.id}
                 style={{
                   margin: "5px",
-                  backgroundColor: selectedTopics.includes(topic.id)
+                  backgroundColor: selectedTopics.array.includes(topic.id)
                     ? "lightblue"
                     : "white",
                 }}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (selectedTopics.includes(topic.id)) {
-                    setSelectedTopics((prevTopics) =>
-                      prevTopics.filter((topicId) => topicId !== topic.id)
-                    );
+                  if (selectedTopics.array.includes(topic.id)) {
+                    selectedTopics.filter((topicId) => topicId !== topic.id);
                   } else {
-                    setSelectedTopics((prevTopics) => [
-                      ...prevTopics,
-                      topic.id,
-                    ]);
+                    selectedTopics.push(topic.id);
                   }
                 }}
               >
@@ -167,7 +135,7 @@ function JokeForm() {
             <input
               type="text"
               value={newTopic}
-              onChange={(e) => setNewTopic(e.target.value)}
+              onChange={handleNewTopic}
               placeholder="New topic"
             />
           </div>
